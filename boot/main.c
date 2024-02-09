@@ -1,14 +1,14 @@
 __asm__(".code16\n");
 
 extern void WriteLine();
+extern void ReadLine();
 
 void
 bootmain(void)
 {
-
- //for (int i = 0; i < 10; i ++) {
-  WriteLine();
- //}
-  while (1) {}
+  while (1) {
+    ReadLine();
+    WriteLine();
+  }
 }
 

@@ -1,5 +1,8 @@
-.section .text
+.section .data
+buffer: .space 20
 
+
+.section .text
 
 .code16
 .globl start
@@ -29,51 +32,126 @@ start:
 
   call bootmain
 
+
+
+
 .globl WriteLine
 .type WriteLine, @function
 WriteLine:
-  # save caller base pointer
-  push %ebp
-  movl %esp, %ebp
- 
-  # local variables
-  # no local variables were used
-
-  # save calle-saved regiters
-  push %ebx
-  push %edi
-  push %esi
-
-  movw $buffer, %si
-while_loop: 
-  movb (%si), %al
-  movb $0x0E, %ah         #Bios Teletype,This number must be used to
-                          #tell the BIOS to put a character on the screen 
-  movb $0x00, %bh         #Page number (For most of our work this will remain 0x00)
-  movb $0x07, %bl         #Text attribute (For most of our work this will remain 0x07)
-                          #Try to change this value
-  int $0x10
- 
-  # increase buffer
-  inc %si
-  cmp $0, (%si)
-  jne while_loop
-
-  # deallocate local variables
-  # no local variables were used
-  # mov %bp, %sp
-
-  # Restore the caller's registers.
-  pop %esi
-  pop %edi
-  pop %ebx
-  pop %ebp
+  # prologue
+  pushw %bp               # store caller base pointer
+  movw %sp, %bp           # set my own base pointer
+  pushw %bx               # store caller-saved registers used
+  pushw %si               # ...
   
-  # return :D
+  movw $buffer, %si       # load buffer address to %si reg
+wl_cond: 
+  cmpb $0x0, (%si)        # test if the string's end was found
+  je wl_end
+  
+  pushw (%si)            # pass %si as parameter 1
+  call PrintChar         # invoice PrintCar
+  add $0x2, %sp          # restore stack pointer and free mem
+  
+  incw %si               # move to next char and repeat
+  jmp wl_cond
+
+wl_end:
+  # epilogue
+  popw %si
+  popw %bx                # restore caller-saved registers used
+  popw %bp                # restore caller base pointer
   ret
 
-.section .data
-buffer: .byte 0x41, 0x42, 0x43
+
+
+
+.type PrintChar, @function
+PrintChar:
+  # prologue
+  pushw %bp               # store caller base pointer
+  movw %sp, %bp           # set my own base pointer
+  pushw %bx               # store caller-saved registers used
+
+  # then do print stuff
+  movb 4(%bp), %al        # al% represents the char to be printed
+  movb $0x0E, %ah         # teletype function
+  movb $0x00, %bh         # unknown config
+  movb $0x08, %bl         # unknown config                    
+  int $0x10               # display interrupt
+
+  cmpb $0xD, %al
+  jne pc_end
+
+  pushw $0xA
+  call PrintChar
+  add $0x2, %sp
+
+pc_end:
+  # epilogue
+  popw %bx                # restore caller-saved registers used
+  popw %bp                # restore caller base pointer
+  ret
+
+
+
+
+.type PrintSign, @function
+PrintSign:
+  # prologue
+  pushw %bp               # store caller base pointer
+  movw %sp, %bp           # set my own base pointer
+
+  pushw $0x24
+  call PrintChar
+  add $0x2, %sp
+
+  pushw $0x20
+  call PrintChar
+  add $0x2, %sp
+
+  # epilogue
+  popw %bp                # restore caller base pointer
+  ret
+
+
+
+
+.globl ReadLine
+.type ReadLine, @function
+ReadLine:
+  # prologue
+  pushw %bp               # store caller base pointer
+  movw %sp, %bp           # set my own base pointer
+  pushw %si               # store caller-saved registers used
+  
+  call PrintSign
+
+  movw $buffer, %si       # load buffer address to %si reg
+rl_repeat:
+  movw $0x0, %ax          # clear %al (%ah must be 0x0 and %al stores the result)
+  int $0x16               # keyboard interrup
+
+  movb %al, (%si)         # insert result into buffer
+  inc %si                 # move to next empty space in buffer
+
+  pushw %ax               # push to pass as parameter 1
+  call PrintChar          # print this char
+  add $0x2, %sp           # restore stack pointer
+
+rl_cond:
+  cmpb $0xD, -1(%si)      # compare %al (result) with \r
+  jne rl_repeat           # if it's a normal char, then repeat
+   
+  movw $0, %si            # insert <end of string>
+  
+  # epilogue
+  popw %si                # restore caller-saved registers used
+  popw %bp                # restore caller base pointer
+  ret
+
+
+
 
 # Bootstrap GDT
 .p2align 2                                # force 4 byte alignment
