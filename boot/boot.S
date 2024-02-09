@@ -1,8 +1,5 @@
-.data
-message:
-  .string "GALILEO"
+.section .text
 
-.text
 
 .code16
 .globl start
@@ -23,9 +20,9 @@ start:
   movw %ax, %gs
 
 	#Stack Initialization
-  movw $0x0000 , %ax 
+  movw $0x0000, %ax 
   movw %ax, %ss
-  movw $0xFFFF,%sp
+  movw $0xFFFF, %sp
   
   # enable interrupts
   sti
@@ -47,15 +44,21 @@ WriteLine:
   push %edi
   push %esi
 
-  # this code will print Hello world to console!
-  movw $'A', %ax
+  movw $buffer, %si
+while_loop: 
+  movb (%si), %al
   movb $0x0E, %ah         #Bios Teletype,This number must be used to
                           #tell the BIOS to put a character on the screen 
   movb $0x00, %bh         #Page number (For most of our work this will remain 0x00)
   movb $0x07, %bl         #Text attribute (For most of our work this will remain 0x07)
                           #Try to change this value
   int $0x10
-  
+ 
+  # increase buffer
+  inc %si
+  cmp $0, (%si)
+  jne while_loop
+
   # deallocate local variables
   # no local variables were used
   # mov %bp, %sp
@@ -68,7 +71,10 @@ WriteLine:
   
   # return :D
   ret
-	
+
+.section .data
+buffer: .byte 0x41, 0x42, 0x43
+
 # Bootstrap GDT
 .p2align 2                                # force 4 byte alignment
  
