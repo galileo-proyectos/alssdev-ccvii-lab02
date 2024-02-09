@@ -204,11 +204,11 @@ rl_cond:
   cmpb $0xD, -1(%si)      # compare %al (result) with \r
     7c80:	80 7c ff 0d 75       	cmpb   $0x75,0xd(%edi,%edi,8)
   jne rl_repeat           # if it's a normal char, then repeat
-    7c85:	eb be                	jmp    7c45 <PrintChar+0x11>
+    7c85:	eb c6                	jmp    7c4d <PrintChar+0x19>
    
-  movw $0, %si            # insert <end of string>
-    7c87:	00 00                	add    %al,(%eax)
-  
+  movb $0, (%si)          # insert <end of string>
+    7c87:	04 00                	add    $0x0,%al
+
   # epilogue
   popw %si                # restore caller-saved registers used
     7c89:	5e                   	pop    %esi

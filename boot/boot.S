@@ -143,8 +143,8 @@ rl_cond:
   cmpb $0xD, -1(%si)      # compare %al (result) with \r
   jne rl_repeat           # if it's a normal char, then repeat
    
-  movw $0, %si            # insert <end of string>
-  
+  movb $0, (%si)          # insert <end of string>
+
   # epilogue
   popw %si                # restore caller-saved registers used
   popw %bp                # restore caller base pointer
