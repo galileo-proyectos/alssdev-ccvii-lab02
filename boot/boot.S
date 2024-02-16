@@ -1,5 +1,5 @@
 .section .data
-buffer: .space 20
+buffer: .space 50
 
 
 .section .text
@@ -17,7 +17,7 @@ start:
 	# memory at physical address 0x7c00 and starts executing in real mode
 	# with %cs=0 %ip=7c00.
   movw $0x07C0, %ax 
-  movw %ax, %ds
+  # movw %ax, %ds
   movw %ax, %es
   movw %ax, %fs
   movw %ax, %gs
